@@ -42,152 +42,30 @@
             <iframe id="dashboard" width="100%" height="300" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTaT9Z3nrIGK8nyNdLfZ-mFGRDLNza6cFzFSpqhszpRMlRv7VZowsU9ZXtIJ9-H1OmvL7uGh79l5mqc/pubhtml"></iframe>
         </div>
     </div>
-
     <script>
-        // 1. YOUR CLINICAL LOGIC LIBRARY
-        const setupLibrary = {
-                    "Cervical Flexion": [
-                        "Try again while SEATED (not standing)", 
-                        "Try again while SUPPORTING YOUR ARMS (hands on thighs or forearms)", 
-                        "Try a SMALL NOD only (partial range)",
-                        "Try again while LYING ON YOUR BACK",
-                        "Perform a very slow return to upright position"
-                    ],
-                    "Cervical Extension": [
-                        "Try again while SEATED with mid-back support", 
-                        "Try again while SUPPORTING YOUR ARMS on a table or armrest", 
-                        "Try to 'LENGTHEN UPWARDS THEN TIP BACK' (very small range only)",
-                        "Try again while LYING ON YOUR BACK with a towel roll under your neck"
-                    ],
-                    "Cervical Rotation": [
-                        "Try again while SEATED (not standing)", 
-                        "Reduce your range and slow your speed to the first smooth point",
-                        "Try again while SUPPORTING YOUR ELBOWS on a table or armrest",
-                        "Try again while LYING ON YOUR BACK (gravity removed)"
-                    ],            
-                    "Lumbar Flexion": [
-                        "Try again while SEATED (not standing)", 
-                        "Place your HANDS ON YOUR THIGHS to share the load", 
-                        "Focus on a HIP HINGE movement only",
-                        "Try again with a REDUCED RANGE of motion"
-                    ],
-                    "Lumbar Extension": [
-                        "Try again while STANDING with hands supported on a wall or counter", 
-                        "Try again while SEATED", 
-                        "Try again while LYING FACE DOWN on your elbows (graded)",
-                        "Reduce your range and move at a much slower speed"
-                    ],
-                    "Lumbar Side-Bending": [
-                        "Try again while SEATED", 
-                        "Support your weight with your ARM on your thigh or a table",
-                        "Try again with a REDUCED RANGE only"
-                    ],
-                    "Sit-to-Stand": [
-                        "Place your HANDS ON YOUR THIGHS or armrests for support", 
-                        "Try again from a HIGHER SEAT height",
-                        "Perform the movement in SLOW, segmented steps"
-                    ],
-                    "Postural or Movement Fatigue": [
-                        "Use full support for your ARMS, BACK, and CHAIR", 
-                        "Take a MICRO-BREAK for 2 minutes before trying again",
-                        "Perform only 1-2 brief 'Access Resets' (low reps)"
-                    ]
-                };
-
-        // 2. STATE MANAGEMENT
+        // 1. Grab Patient ID from the URL
         const urlParams = new URLSearchParams(window.location.search);
-        const patientId = urlParams.get('id') || "PT_882";
-        const taskName = urlParams.get('boundary') || "Cervical Flexion";
-        const initialSetup = urlParams.get('setup') || "Standard Form";
-        let currentFailureIdx = 0;
-
-        // 3. INITIALIZE SCREEN
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('boundary').value = taskName;
-            document.getElementById('setup').value = initialSetup;
-            checkLockout();
-        });
-
-        // 4. LOCKOUT LOGIC (4 Hours)
-        function checkLockout() {
-            const lastSession = localStorage.getItem('lastCheckin_' + patientId);
-            if (lastSession) {
-                const diff = Date.now() - parseInt(lastSession);
-                if (diff < (4 * 60 * 60 * 1000)) { // 4 hours in ms
-                    disableApp();
-                }
-            }
-        }
-
-        function disableApp() {
-            document.getElementById('actionButtons').classList.add('opacity-30', 'pointer-events-none');
-            document.getElementById('lockoutMsg').classList.remove('hidden');
-        }
-
-        // 5. THE NEGOTIATION LOGIC
-        function confirmChoice(answer) {
-            if (confirm(`Confirm: The movement is ${answer === 'Yes' ? 'pain-free' : 'still painful'}?`)) {
-                handleCheckin(answer);
-            }
-        }
-
-        async function handleCheckin(answer) {
-            const webAppUrl = "https://script.google.com/macros/s/AKfycbx-cxW7I_VS5fEZ7Ok23T52zgRdJ1UZ9pzYLZpn2HfDO9kTv6jzgRZSBiraoqKhwprm/exec"; 
-            const responseDiv = document.getElementById('aiResponse');
-            const responseText = document.getElementById('responseText');
-            const setupInput = document.getElementById('setup');
+        const patientId = urlParams.get('id') || "PT_101";
+    
+        // 2. FETCH THE CURRENT PRESCRIPTION FROM YOUR SHEET
+        async function loadPrescription() {
+            const webAppUrl = "https://script.google.com/macros/s/AKfycbxMk--EfuGcu6z2KMLk2W6TT3-IkmnUXmaV4sHJon9QMltfiv5ZmTsIKvAaV77fY_Qz/exec"; 
             
-            responseDiv.classList.remove('hidden');
-
-            if (answer === 'Yes') {
-                responseDiv.className = "mt-6 p-4 rounded-lg bg-green-50 border-green-500 text-green-800";
-                responseText.innerText = "ACCESSIBLE. The window is open. Perform your 1-3 reps of the Access Move.";
-                localStorage.setItem('lastCheckin_' + patientId, Date.now());
-                submitData(webAppUrl, answer);
-                setTimeout(disableApp, 2000); // Lock after success
-            } else {
-                const alternates = setupLibrary[taskName];
+            try {
+                const response = await fetch(`${webAppUrl}?id=${patientId}`);
+                const data = await response.json();
                 
-                if (alternates && currentFailureIdx < alternates.length) {
-                    const nextSetup = alternates[currentFailureIdx];
-                    responseDiv.className = "mt-6 p-4 rounded-lg bg-orange-50 border-orange-500 text-orange-800";
-                    responseText.innerText = `STILL A BOUNDARY. New Setup recommended: "${nextSetup}". Try again now.`;
-                    
-                    // Update "The Access Move" box in real-time
-                    setupInput.value = nextSetup;
-                    currentFailureIdx++;
-                    
-                    // Log the failure, but don't lock the app yet so they can try the new setup
-                    submitData(webAppUrl, `Boundary (Tried: ${nextSetup})`);
-                } else {
-                    responseDiv.className = "mt-6 p-4 rounded-lg bg-red-50 border-red-500 text-red-800";
-                    responseText.innerText = "RED FLAG: No setups are working today. Stop movements and notify provider.";
-                    localStorage.setItem('lastCheckin_' + patientId, Date.now());
-                    submitData(webAppUrl, "RED FLAG - NO ACCESS");
-                    setTimeout(disableApp, 3000);
-                }
+                // Update the screen with the Sheet's data
+                document.getElementById('boundary').value = data.task;
+                document.getElementById('setup').value = data.setup;
+                console.log("Prescription loaded for level: " + data.level);
+            } catch (error) {
+                console.error("Failed to fetch prescription", error);
             }
         }
-
-        function submitData(url, status) {
-            fetch(url, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify({
-                    patientId: patientId,
-                    boundary: taskName,
-                    setup: document.getElementById('setup').value,
-                    status: status
-                })
-            });
-        }
-        function resetTest() {
-            if(confirm("Resetting will clear the lockout and failure counts for testing. Proceed?")) {
-                localStorage.removeItem('lastCheckin_' + patientId);
-                currentFailureIdx = 0;
-                location.reload(); // Refreshes the page to start fresh
-            }
-        }
+    
+        document.addEventListener("DOMContentLoaded", loadPrescription);
     </script>
 </body>
+
 </html>
