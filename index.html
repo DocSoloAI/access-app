@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Logic Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
-<style>
+    <style>
         #setupDisplay { white-space: pre-wrap; }
-        /* Slick Custom Modal Styles */
         #customModal { transition: opacity 0.3s ease; }
         .modal-btn { transition: transform 0.1s ease; }
     </style>
 </head>
 <body class="bg-slate-50 p-4 font-sans sm:p-6 text-slate-900">
+    
     <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center">
             <h3 id="modalTitle" class="text-xl font-black text-slate-800 mb-2">Is it painful?</h3>
@@ -54,6 +54,9 @@
                             <button onclick="evaluateResponse('Yes')" class="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all text-lg">YES</button>
                             <button onclick="evaluateResponse('No')" class="flex-1 bg-rose-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all text-lg">NO</button>
                         </div>
+                        <p class="text-[10px] text-slate-400 text-center mt-6 uppercase tracking-tighter leading-tight">
+                            Note: To allow your system to settle, please leave at least 4 hours between sessions.
+                        </p>
                     </div>
                 </div>
 
@@ -68,13 +71,19 @@
         const webAppUrl = "https://script.google.com/macros/s/AKfycbwZStxqyXwXgstiQgB603i2BcnIHyaIt0T8tG_3IOVz1AQFYJ6ZV5AoZpQPqKppf7gq/exec"; 
         const urlParams = new URLSearchParams(window.location.search);
         const patientId = urlParams.get('id') || "PT_101";
-        let sessionNoCount = 0; // Tracks if they hit 'No' twice in one session
+        let sessionNoCount = 0;
 
         async function loadClinicalData() {
             try {
                 const response = await fetch(`${webAppUrl}?id=${patientId}`);
                 const data = await response.json();
                 
+                // --- HARD LOCKOUT CHECK ---
+                if (data.isLocked) {
+                    showLockoutSuccess(data.nextTime);
+                    return;
+                }
+
                 document.getElementById('boundary').value = data.task;
                 document.getElementById('setupDisplay').innerText = data.setup;
                 document.getElementById('levelBadge').innerText = `LEVEL ${data.level}`;
@@ -111,7 +120,7 @@
             if (answer === 'Yes') {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
                 responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
-                sessionNoCount = 0; // Reset count on success
+                sessionNoCount = 0; 
             } else {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
                 responseText.innerText = "One moment... Loading a more comfortable move.";
@@ -129,7 +138,7 @@
                 if (answer === 'No' && sessionNoCount >= 2) {
                     showLockout();
                 } else {
-                    setTimeout(loadClinicalData, 2000); // Reload lower/higher move
+                    setTimeout(loadClinicalData, 2000); 
                 }
             });
         }
@@ -149,9 +158,9 @@
             };
         }
 
+        // Triggered for Double-No Failures
         function showLockout() {
             const container = document.getElementById('exercise-container');
-            // This removes the action buttons and the "Window Narrowed" banner
             document.getElementById('aiResponse').classList.add('hidden');
             
             container.innerHTML = `
@@ -169,11 +178,31 @@
                 </div>`;
         }
 
+        // Triggered when 4-hour clock is active (dosage control)
+        function showLockoutSuccess(nextTime) {
+            const container = document.getElementById('exercise-container');
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('mainUI').classList.remove('hidden');
+            
+            container.innerHTML = `
+                <div class="text-center py-8 px-4">
+                    <div class="bg-emerald-100 text-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800 mb-3">Progress Recorded</h3>
+                    <p class="text-slate-600 leading-relaxed text-sm">
+                        Thank you for updating your progress! To get the best results, we need to let your nervous system settle before the next update.
+                    </p>
+                    <div class="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Next Session Available After</p>
+                        <p class="text-2xl font-black text-blue-900">${nextTime || "4 hours"}</p>
+                    </div>
+                </div>`;
+        }
+
         document.addEventListener("DOMContentLoaded", loadClinicalData);
     </script>
 </body>
 </html>
-
-
-
-
