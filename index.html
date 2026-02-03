@@ -9,7 +9,7 @@
         #setupDisplay { white-space: pre-wrap; }
         /* Slick Custom Modal Styles */
         #customModal { transition: opacity 0.3s ease; }
-        .modal-btn { transition: transform 0.1s active; }
+        .modal-btn { transition: transform 0.1s ease; }
     </style>
 </head>
 <body class="bg-slate-50 p-4 font-sans sm:p-6 text-slate-900">
@@ -49,7 +49,7 @@
                     </div>
 
                     <div id="actionArea" class="border-t border-slate-100 pt-6">
-                        <p class="text-sm text-slate-600 mb-6 italic text-center font-medium">"Are you able to do this movement safely and without pain?"</p>
+                        <p class="text-sm text-slate-600 mb-6 italic text-center font-medium">"Was this movement easy enough to do without pushing into pain?"</p>
                         <div id="actionButtons" class="flex gap-4">
                             <button onclick="evaluateResponse('Yes')" class="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all text-lg">YES</button>
                             <button onclick="evaluateResponse('No')" class="flex-1 bg-rose-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all text-lg">NO</button>
@@ -173,6 +173,7 @@
     </script>
 </body>
 </html>
+
 
 
 
