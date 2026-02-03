@@ -151,16 +151,21 @@
 
         function showLockout() {
             const container = document.getElementById('exercise-container');
+            // This removes the action buttons and the "Window Narrowed" banner
+            document.getElementById('aiResponse').classList.add('hidden');
+            
             container.innerHTML = `
                 <div class="text-center py-6 px-4">
-                    <div class="bg-rose-100 text-rose-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="bg-blue-100 text-blue-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-black text-slate-800 mb-3">System Check</h3>
-                    <p class="text-slate-600 leading-relaxed text-sm">Your system is asking for a rest right now. To prevent a flare-up, let's pause these movements.</p>
-                    <p class="mt-4 font-bold text-blue-900 text-sm">Try this move again in a few hours or tomorrow morning.</p>
+                    <h3 class="text-xl font-black text-slate-800 mb-3">Pause Break</h3>
+                    <p class="text-slate-600 leading-relaxed text-sm">
+                        Your body is being extra protective right now. To avoid a flare-up and stay in the 'safe zone,' let's pause these movements.
+                    </p>
+                    <p class="mt-4 font-bold text-blue-900 text-sm">Try again in a few hours or tomorrow morning.</p>
                 </div>`;
         }
 
@@ -168,4 +173,5 @@
     </script>
 </body>
 </html>
+
 
