@@ -110,11 +110,11 @@
 
             if (answer === 'Yes') {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
-                responseText.innerText = "ACCESSIBLE. The window is open. Perform your reps.";
+                responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
                 sessionNoCount = 0; // Reset count on success
             } else {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
-                responseText.innerText = "WINDOW NARROWED. Loading a more accessible move...";
+                responseText.innerText = "One moment... Loading a more comfortable move.";
             }
 
             fetch(webAppUrl, {
@@ -165,7 +165,7 @@
                     <p class="text-slate-600 leading-relaxed text-sm">
                         Your body is being extra protective right now. To avoid a flare-up and stay in the 'safe zone,' let's pause these movements.
                     </p>
-                    <p class="mt-4 font-bold text-blue-900 text-sm">Try again in a few hours or tomorrow morning.</p>
+                    <p class="mt-4 font-bold text-blue-900 text-sm">Try again in a few hours or tomorrow.</p>
                 </div>`;
         }
 
@@ -173,5 +173,6 @@
     </script>
 </body>
 </html>
+
 
 
