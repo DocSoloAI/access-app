@@ -183,6 +183,9 @@
             const container = document.getElementById('exercise-container');
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('mainUI').classList.remove('hidden');
+
+            // Hides the green 'Safe Zone' banner so it doesn't overlap
+            document.getElementById('aiResponse').classList.add('hidden');
             
             container.innerHTML = `
                 <div class="text-center py-8 px-4">
@@ -206,3 +209,4 @@
     </script>
 </body>
 </html>
+
