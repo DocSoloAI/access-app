@@ -6,11 +6,11 @@
     <title>Access Logic Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Ensures the instructions preserve the line breaks from your Apps Script */
+        /* Preserves the line breaks from your Apps Script library */
         #setupDisplay { white-space: pre-wrap; }
     </style>
 </head>
-<body class="bg-slate-50 p-4 font-sans sm:p-6">
+<body class="bg-slate-50 p-4 font-sans sm:p-6 text-slate-900">
     <div class="max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         <div class="bg-blue-900 p-4 text-center">
             <h1 class="text-xl font-bold text-white tracking-tight">Access Engine</h1>
@@ -25,7 +25,7 @@
             <div id="mainUI" class="hidden">
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Focus</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Focus</label>
                         <span id="levelBadge" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
                     </div>
                     <input id="boundary" type="text" readonly class="w-full p-0 mb-4 bg-transparent font-extrabold text-xl text-slate-800 focus:outline-none border-none">
@@ -64,7 +64,6 @@
                 document.getElementById('boundary').value = data.task;
                 document.getElementById('setupDisplay').innerText = data.setup;
                 
-                // Show the current level as a badge
                 const badge = document.getElementById('levelBadge');
                 badge.innerText = `LEVEL ${data.level}`;
 
@@ -77,7 +76,6 @@
         }
 
         async function handleResponse(answer) {
-            // Confirmation tailored to clinical safety
             const confirmMsg = answer === 'Yes' ? "Confirm: Movement felt good and pain-free?" : "Confirm: Did you feel pain or a 'catch' during that move?";
             if (!confirm(confirmMsg)) return;
 
@@ -86,14 +84,14 @@
             const actionButtons = document.getElementById('actionButtons');
             
             responseDiv.classList.remove('hidden');
-            actionButtons.classList.add('opacity-50', 'pointer-events-none'); // Prevent double-clicking
+            actionButtons.classList.add('opacity-50', 'pointer-events-none');
 
             if (answer === 'Yes') {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm transition-all";
-                responseText.innerText = "Fantastic. The window is open. Proceed with your session as prescribed.";
+                responseText.innerText = "ACCESSIBLE. The window is open. Perform your reps.";
             } else {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm transition-all";
-                responseText.innerText = "Boundary reached. Respect the signal and stop for now. Your plan will adjust.";
+                responseText.innerText = "BOUNDARY REACHED. Respect the signal. Stop and wait for your next session.";
             }
 
             // Sync with Google Sheet
@@ -103,11 +101,11 @@
                 cache: "no-cache",
                 body: JSON.stringify({
                     patientId: patientId,
-                    boundary: document.getElementById('boundary').value,
+                    task_tested: document.getElementById('boundary').value, // RENAMED for V1.2
                     status: answer
                 })
             }).then(() => {
-                // Optional: Refresh data after 3 seconds to show the new Level/Instruction if it changed
+                // Refresh data after 3 seconds to show potential Level upgrade/downgrade
                 setTimeout(loadClinicalData, 3000);
             });
         }
