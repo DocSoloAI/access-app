@@ -5,12 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Logic Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Preserves the line breaks from your Apps Script library */
+<style>
         #setupDisplay { white-space: pre-wrap; }
+        /* Slick Custom Modal Styles */
+        #customModal { transition: opacity 0.3s ease; }
+        .modal-btn { transition: transform 0.1s active; }
     </style>
 </head>
 <body class="bg-slate-50 p-4 font-sans sm:p-6 text-slate-900">
+    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center">
+            <h3 id="modalTitle" class="text-xl font-black text-slate-800 mb-2">Is it painful?</h3>
+            <p id="modalBody" class="text-sm text-slate-600 mb-6 leading-relaxed">Did you feel a sharp pain or a 'catch' during that move?</p>
+            <div class="flex gap-3">
+                <button id="modalConfirm" class="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-100 active:scale-95 transition-all">YES, IT HURT</button>
+                <button id="modalCancel" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold active:scale-95 transition-all">NO, MISTAKE</button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         <div class="bg-blue-900 p-4 text-center">
             <h1 class="text-xl font-bold text-white tracking-tight">Access Engine</h1>
@@ -23,22 +36,24 @@
             </div>
 
             <div id="mainUI" class="hidden">
-                <div class="mb-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Focus</label>
-                        <span id="levelBadge" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+                <div id="exercise-container">
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Focus</label>
+                            <span id="levelBadge" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+                        </div>
+                        <input id="boundary" type="text" readonly class="w-full p-0 mb-4 bg-transparent font-extrabold text-xl text-slate-800 focus:outline-none border-none">
+                        
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">How to Move & Dosage</label>
+                        <div id="setupDisplay" class="p-4 bg-blue-50 rounded-2xl border border-blue-100 font-medium text-blue-900 shadow-inner text-sm leading-relaxed"></div>
                     </div>
-                    <input id="boundary" type="text" readonly class="w-full p-0 mb-4 bg-transparent font-extrabold text-xl text-slate-800 focus:outline-none border-none">
-                    
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">How to Move & Dosage</label>
-                    <div id="setupDisplay" class="p-4 bg-blue-50 rounded-2xl border border-blue-100 font-medium text-blue-900 shadow-inner text-sm leading-relaxed"></div>
-                </div>
 
-                <div class="border-t border-slate-100 pt-6">
-                    <p class="text-sm text-slate-600 mb-6 italic text-center font-medium">"Are you able to do this movement safely and without pain?"</p>
-                    <div id="actionButtons" class="flex gap-4">
-                        <button onclick="handleResponse('Yes')" class="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all text-lg">YES</button>
-                        <button onclick="handleResponse('No')" class="flex-1 bg-rose-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all text-lg">NO</button>
+                    <div id="actionArea" class="border-t border-slate-100 pt-6">
+                        <p class="text-sm text-slate-600 mb-6 italic text-center font-medium">"Are you able to do this movement safely and without pain?"</p>
+                        <div id="actionButtons" class="flex gap-4">
+                            <button onclick="evaluateResponse('Yes')" class="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all text-lg">YES</button>
+                            <button onclick="evaluateResponse('No')" class="flex-1 bg-rose-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-rose-200 hover:bg-rose-600 active:scale-95 transition-all text-lg">NO</button>
+                        </div>
                     </div>
                 </div>
 
@@ -50,11 +65,10 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const webAppUrl = "https://script.google.com/macros/s/AKfycbwZStxqyXwXgstiQgB603i2BcnIHyaIt0T8tG_3IOVz1AQFYJ6ZV5AoZpQPqKppf7gq/exec"; 
-        
         const urlParams = new URLSearchParams(window.location.search);
         const patientId = urlParams.get('id') || "PT_101";
+        let sessionNoCount = 0; // Tracks if they hit 'No' twice in one session
 
         async function loadClinicalData() {
             try {
@@ -63,22 +77,30 @@
                 
                 document.getElementById('boundary').value = data.task;
                 document.getElementById('setupDisplay').innerText = data.setup;
-                
-                const badge = document.getElementById('levelBadge');
-                badge.innerText = `LEVEL ${data.level}`;
+                document.getElementById('levelBadge').innerText = `LEVEL ${data.level}`;
 
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
+                document.getElementById('actionButtons').classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('aiResponse').classList.add('hidden');
             } catch (e) {
                 document.getElementById('loadingOverlay').innerHTML = 
-                    "<div class='p-4 bg-red-50 rounded-xl text-red-600'><p class='font-bold'>Connection Error</p><p class='text-xs'>Please check your internet or refresh.</p></div>";
+                    "<div class='p-4 bg-red-50 rounded-xl text-red-600'><p class='font-bold'>Connection Error</p><p class='text-xs'>Refresh to try again.</p></div>";
             }
         }
 
-        async function handleResponse(answer) {
-            const confirmMsg = answer === 'Yes' ? "Confirm: Movement felt good and pain-free?" : "Confirm: Did you feel pain or a 'catch' during that move?";
-            if (!confirm(confirmMsg)) return;
+        function evaluateResponse(status) {
+            if (status === 'No') {
+                showModal("Is it painful?", "Did you feel a sharp pain or a 'catch' during that move?", () => {
+                    sessionNoCount++;
+                    handlePost(status);
+                });
+            } else {
+                handlePost(status);
+            }
+        }
 
+        function handlePost(answer) {
             const responseDiv = document.getElementById('aiResponse');
             const responseText = document.getElementById('responseText');
             const actionButtons = document.getElementById('actionButtons');
@@ -87,27 +109,59 @@
             actionButtons.classList.add('opacity-50', 'pointer-events-none');
 
             if (answer === 'Yes') {
-                responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm transition-all";
+                responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
                 responseText.innerText = "ACCESSIBLE. The window is open. Perform your reps.";
+                sessionNoCount = 0; // Reset count on success
             } else {
-                responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm transition-all";
-                responseText.innerText = "BOUNDARY REACHED. Respect the signal. Stop and wait for your next session.";
+                responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
+                responseText.innerText = "WINDOW NARROWED. Loading a more accessible move...";
             }
 
-            // Sync with Google Sheet
             fetch(webAppUrl, {
                 method: "POST",
                 mode: "no-cors",
-                cache: "no-cache",
                 body: JSON.stringify({
                     patientId: patientId,
-                    task_tested: document.getElementById('boundary').value, // RENAMED for V1.2
+                    task_tested: document.getElementById('boundary').value,
                     status: answer
                 })
             }).then(() => {
-                // Refresh data after 3 seconds to show potential Level upgrade/downgrade
-                setTimeout(loadClinicalData, 3000);
+                if (answer === 'No' && sessionNoCount >= 2) {
+                    showLockout();
+                } else {
+                    setTimeout(loadClinicalData, 2000); // Reload lower/higher move
+                }
             });
+        }
+
+        function showModal(title, body, onConfirm) {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerText = body;
+            modal.classList.remove('hidden');
+
+            document.getElementById('modalConfirm').onclick = () => {
+                modal.classList.add('hidden');
+                onConfirm();
+            };
+            document.getElementById('modalCancel').onclick = () => {
+                modal.classList.add('hidden');
+            };
+        }
+
+        function showLockout() {
+            const container = document.getElementById('exercise-container');
+            container.innerHTML = `
+                <div class="text-center py-6 px-4">
+                    <div class="bg-rose-100 text-rose-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800 mb-3">System Check</h3>
+                    <p class="text-slate-600 leading-relaxed text-sm">Your system is asking for a rest right now. To prevent a flare-up, let's pause these movements.</p>
+                    <p class="mt-4 font-bold text-blue-900 text-sm">Try this move again in a few hours or tomorrow morning.</p>
+                </div>`;
         }
 
         document.addEventListener("DOMContentLoaded", loadClinicalData);
