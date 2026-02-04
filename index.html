@@ -83,20 +83,27 @@
                 const response = await fetch(`${webAppUrl}?id=${patientId}`);
                 const data = await response.json();
                 
-                // --- UPDATED VAGUE LOCKOUT CHECK ---
                 if (data.isLocked) {
                     showLockoutSuccess(data.message);
                     return;
                 }
     
+                // --- UI RESET: Clear old states before showing new move ---
+                document.getElementById('aiResponse').classList.add('hidden');
+                const actionButtons = document.getElementById('actionButtons');
+                actionButtons.classList.remove('opacity-50', 'pointer-events-none');
+                // Ensure buttons say the right thing
+                actionButtons.firstElementChild.innerText = "YES";
+                actionButtons.lastElementChild.innerText = "NO";
+
+                // Populate new data
                 document.getElementById('boundary').value = data.task;
                 document.getElementById('setupDisplay').innerText = data.setup;
                 document.getElementById('levelBadge').innerText = `LEVEL ${data.level}`;
     
+                // Show Main UI
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
-                document.getElementById('actionButtons').classList.remove('opacity-50', 'pointer-events-none');
-                document.getElementById('aiResponse').classList.add('hidden');
             } catch (e) {
                 document.getElementById('loadingOverlay').innerHTML = 
                     "<div class='p-4 bg-red-50 rounded-xl text-red-600'><p class='font-bold'>Connection Error</p><p class='text-xs'>Refresh to try again.</p></div>";
@@ -151,14 +158,27 @@
                     status: answer
                 })
             }).then(() => {
-                if (answer === 'No' && sessionNoCount >= 2) {
-                    modal.classList.add('hidden'); // Close finding modal
-                    showLockout();
-                } else if (answer === 'No') {
+                // Ensure buttons are reset for whenever they appear next
+                const actionButtons = document.getElementById('actionButtons');
+                actionButtons.firstElementChild.innerText = "YES";
+                actionButtons.lastElementChild.innerText = "NO";
+
+                if (answer === 'No') {
+                    if (sessionNoCount >= 2) {
+                        modal.classList.add('hidden'); 
+                        showLockout();
+                    } else {
+                        // REFRESH ONLY: Give the patient a second to see the "Finding" message
+                        setTimeout(() => {
+                            modal.classList.add('hidden');
+                            // Note: showModal reset will handle modalFooter visibility next time
+                            loadClinicalData(); 
+                        }, 1500);
+                    }
+                } else {
+                    // YES path: Give them 1 second to read the green "Safe Zone" box before lockout
                     setTimeout(() => {
-                        modal.classList.add('hidden'); // Close finding modal
-                        modalFooter.classList.remove('hidden'); // Restore buttons for next time
-                        loadClinicalData(); 
+                        showLockoutSuccess("Check back in a few hours or tomorrow.");
                     }, 1500);
                 }
             });
@@ -166,6 +186,10 @@
     
         function showModal(title, body, onConfirm) {
             const modal = document.getElementById('customModal');
+            const modalFooter = modal.querySelector('.flex.gap-3'); // 1. Grab the buttons
+            
+            modalFooter.classList.remove('hidden'); // 2. Make sure they are visible
+            
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalBody').innerText = body;
             modal.classList.remove('hidden');
@@ -225,6 +249,3 @@
     </script>
 </body>
 </html>
-
-
-
