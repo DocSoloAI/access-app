@@ -115,29 +115,31 @@
         }
     
         function handlePost(answer) {
-            const responseDiv = document.getElementById('aiResponse');
-            const responseText = document.getElementById('responseText');
             const actionButtons = document.getElementById('actionButtons');
-            const yesBtn = actionButtons.firstElementChild;
-            const noBtn = actionButtons.lastElementChild;
+            const modal = document.getElementById('customModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalFooter = modal.querySelector('.flex.gap-3'); // Selects the button container
             
-            responseDiv.classList.remove('hidden');
             actionButtons.classList.add('opacity-50', 'pointer-events-none');
 
             if (answer === 'Yes') {
+                const responseDiv = document.getElementById('aiResponse');
+                const responseText = document.getElementById('responseText');
+                responseDiv.classList.remove('hidden');
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
                 responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
                 sessionNoCount = 0; 
-                yesBtn.innerText = "SAVING...";
             } else {
-                responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
-                // UPDATED LANGUAGE: Swapped 'Calibrating' for 'Finding a more comfortable move'
-                responseText.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="animate-spin w-4 h-4 border-2 border-rose-600 border-t-transparent rounded-full"></div>
-                        <span>Finding a more comfortable move for you...</span>
+                // LOCK THE MODAL OPEN and change text
+                modal.classList.remove('hidden');
+                modalTitle.innerText = "One moment...";
+                modalBody.innerHTML = `
+                    <div class="flex flex-col items-center py-4">
+                        <div class="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mb-4"></div>
+                        <p class="font-bold text-slate-800">Finding a more comfortable move for you...</p>
                     </div>`;
-                noBtn.innerText = "WAITING...";
+                modalFooter.classList.add('hidden'); // Hide the buttons so they can't click "Mistake"
             }
 
             fetch(webAppUrl, {
@@ -149,13 +151,15 @@
                     status: answer
                 })
             }).then(() => {
-                yesBtn.innerText = "YES";
-                noBtn.innerText = "NO";
-
                 if (answer === 'No' && sessionNoCount >= 2) {
+                    modal.classList.add('hidden'); // Close finding modal
                     showLockout();
-                } else {
-                    setTimeout(loadClinicalData, 1500); 
+                } else if (answer === 'No') {
+                    setTimeout(() => {
+                        modal.classList.add('hidden'); // Close finding modal
+                        modalFooter.classList.remove('hidden'); // Restore buttons for next time
+                        loadClinicalData(); 
+                    }, 1500);
                 }
             });
         }
@@ -221,5 +225,6 @@
     </script>
 </body>
 </html>
+
 
 
