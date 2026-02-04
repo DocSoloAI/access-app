@@ -70,24 +70,29 @@
     <script>
         const webAppUrl = "https://script.google.com/macros/s/AKfycbwZStxqyXwXgstiQgB603i2BcnIHyaIt0T8tG_3IOVz1AQFYJ6ZV5AoZpQPqKppf7gq/exec"; 
         const urlParams = new URLSearchParams(window.location.search);
-        const patientId = urlParams.get('id') || "PT_101";
+        const patientId = urlParams.get('id'); // Now pulls "JC101" from the URL
         let sessionNoCount = 0;
-
+    
         async function loadClinicalData() {
+            if (!patientId) {
+                document.getElementById('loadingOverlay').innerHTML = "<p class='text-red-500'>Error: No Patient ID provided.</p>";
+                return;
+            }
+    
             try {
                 const response = await fetch(`${webAppUrl}?id=${patientId}`);
                 const data = await response.json();
                 
-                // --- HARD LOCKOUT CHECK ---
+                // --- UPDATED VAGUE LOCKOUT CHECK ---
                 if (data.isLocked) {
-                    showLockoutSuccess(data.nextTime);
+                    showLockoutSuccess(data.message);
                     return;
                 }
-
+    
                 document.getElementById('boundary').value = data.task;
                 document.getElementById('setupDisplay').innerText = data.setup;
                 document.getElementById('levelBadge').innerText = `LEVEL ${data.level}`;
-
+    
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
                 document.getElementById('actionButtons').classList.remove('opacity-50', 'pointer-events-none');
@@ -97,7 +102,7 @@
                     "<div class='p-4 bg-red-50 rounded-xl text-red-600'><p class='font-bold'>Connection Error</p><p class='text-xs'>Refresh to try again.</p></div>";
             }
         }
-
+    
         function evaluateResponse(status) {
             if (status === 'No') {
                 showModal("Is it painful?", "Did you feel a sharp pain or a 'catch' during that move?", () => {
@@ -108,7 +113,7 @@
                 handlePost(status);
             }
         }
-
+    
         function handlePost(answer) {
             const responseDiv = document.getElementById('aiResponse');
             const responseText = document.getElementById('responseText');
@@ -116,7 +121,7 @@
             
             responseDiv.classList.remove('hidden');
             actionButtons.classList.add('opacity-50', 'pointer-events-none');
-
+    
             if (answer === 'Yes') {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
                 responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
@@ -125,7 +130,7 @@
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
                 responseText.innerText = "One moment... Loading a more comfortable move.";
             }
-
+    
             fetch(webAppUrl, {
                 method: "POST",
                 mode: "no-cors",
@@ -135,6 +140,7 @@
                     status: answer
                 })
             }).then(() => {
+                // Logic for Double-No Failures
                 if (answer === 'No' && sessionNoCount >= 2) {
                     showLockout();
                 } else {
@@ -142,13 +148,13 @@
                 }
             });
         }
-
+    
         function showModal(title, body, onConfirm) {
             const modal = document.getElementById('customModal');
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalBody').innerText = body;
             modal.classList.remove('hidden');
-
+    
             document.getElementById('modalConfirm').onclick = () => {
                 modal.classList.add('hidden');
                 onConfirm();
@@ -157,8 +163,7 @@
                 modal.classList.add('hidden');
             };
         }
-
-        // Triggered for Double-No Failures
+    
         function showLockout() {
             const container = document.getElementById('exercise-container');
             document.getElementById('aiResponse').classList.add('hidden');
@@ -172,19 +177,16 @@
                     </div>
                     <h3 class="text-xl font-black text-slate-800 mb-3">Pause Break</h3>
                     <p class="text-slate-600 leading-relaxed text-sm">
-                        Your body is being extra protective right now. To avoid a flare-up and stay in the 'safe zone,' let's pause these movements.
+                        Your body is being extra protective right now. To stay in the 'safe zone,' let's pause these movements.
                     </p>
-                    <p class="mt-4 font-bold text-blue-900 text-sm">Try again in a few hours or tomorrow.</p>
+                    <p class="mt-4 font-bold text-blue-900 text-sm">Check back in a few hours or tomorrow.</p>
                 </div>`;
         }
-
-        // Triggered when 4-hour clock is active (dosage control)
-        function showLockoutSuccess(nextTime) {
+    
+        function showLockoutSuccess(message) {
             const container = document.getElementById('exercise-container');
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('mainUI').classList.remove('hidden');
-
-            // Hides the green 'Safe Zone' banner so it doesn't overlap
             document.getElementById('aiResponse').classList.add('hidden');
             
             container.innerHTML = `
@@ -195,19 +197,16 @@
                         </svg>
                     </div>
                     <h3 class="text-xl font-black text-slate-800 mb-3">Progress Recorded</h3>
-                    <p class="text-slate-600 leading-relaxed text-sm">
+                    <p class="text-slate-600 leading-relaxed text-sm mb-6">
                         Thank you for updating your progress! To get the best results, we need to let your nervous system settle before the next update.
                     </p>
-                    <div class="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Next Session Available After</p>
-                        <p class="text-2xl font-black text-blue-900">${nextTime || "4 hours"}</p>
+                    <div class="p-5 bg-blue-50 rounded-2xl border border-blue-100 shadow-inner">
+                        <p class="text-blue-900 font-bold leading-tight">${message}</p>
                     </div>
                 </div>`;
         }
-
+    
         document.addEventListener("DOMContentLoaded", loadClinicalData);
     </script>
 </body>
 </html>
-
-
