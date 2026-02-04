@@ -131,10 +131,11 @@
                 yesBtn.innerText = "SAVING...";
             } else {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
+                // UPDATED LANGUAGE: Swapped 'Calibrating' for 'Finding a more comfortable move'
                 responseText.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="animate-spin w-4 h-4 border-2 border-rose-600 border-t-transparent rounded-full"></div>
-                        <span>Calibrating a more comfortable move...</span>
+                        <span>Finding a more comfortable move for you...</span>
                     </div>`;
                 noBtn.innerText = "WAITING...";
             }
@@ -148,14 +149,12 @@
                     status: answer
                 })
             }).then(() => {
-                // Return buttons to original text for the next load
                 yesBtn.innerText = "YES";
                 noBtn.innerText = "NO";
 
                 if (answer === 'No' && sessionNoCount >= 2) {
                     showLockout();
                 } else {
-                    // Slight delay so they can actually read the "Calibrating" message
                     setTimeout(loadClinicalData, 1500); 
                 }
             });
@@ -222,4 +221,5 @@
     </script>
 </body>
 </html>
+
 
