@@ -118,19 +118,27 @@
             const responseDiv = document.getElementById('aiResponse');
             const responseText = document.getElementById('responseText');
             const actionButtons = document.getElementById('actionButtons');
+            const yesBtn = actionButtons.firstElementChild;
+            const noBtn = actionButtons.lastElementChild;
             
             responseDiv.classList.remove('hidden');
             actionButtons.classList.add('opacity-50', 'pointer-events-none');
-    
+
             if (answer === 'Yes') {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm";
                 responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
                 sessionNoCount = 0; 
+                yesBtn.innerText = "SAVING...";
             } else {
                 responseDiv.className = "mt-6 p-4 rounded-2xl bg-rose-50 border-rose-500 text-rose-800 shadow-sm";
-                responseText.innerText = "One moment... Loading a more comfortable move.";
+                responseText.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="animate-spin w-4 h-4 border-2 border-rose-600 border-t-transparent rounded-full"></div>
+                        <span>Calibrating a more comfortable move...</span>
+                    </div>`;
+                noBtn.innerText = "WAITING...";
             }
-    
+
             fetch(webAppUrl, {
                 method: "POST",
                 mode: "no-cors",
@@ -140,11 +148,15 @@
                     status: answer
                 })
             }).then(() => {
-                // Logic for Double-No Failures
+                // Return buttons to original text for the next load
+                yesBtn.innerText = "YES";
+                noBtn.innerText = "NO";
+
                 if (answer === 'No' && sessionNoCount >= 2) {
                     showLockout();
                 } else {
-                    setTimeout(loadClinicalData, 2000); 
+                    // Slight delay so they can actually read the "Calibrating" message
+                    setTimeout(loadClinicalData, 1500); 
                 }
             });
         }
@@ -210,3 +222,4 @@
     </script>
 </body>
 </html>
+
