@@ -143,13 +143,24 @@
                 sessionNoCount = 0; 
             } else {
                 modal.classList.remove('hidden');
-                modalTitle.innerText = "One moment...";
-                modalBody.innerHTML = `
-                    <div class="flex flex-col items-center py-4">
-                        <div class="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mb-4"></div>
-                        <p class="font-bold text-slate-800">Finding a more comfortable move for you...</p>
-                    </div>`;
                 modalFooter.classList.add('hidden'); 
+
+                // --- SURGICAL UPDATE: UI check for sessionNoCount ---
+                if (sessionNoCount >= 2) {
+                    modalTitle.innerText = "Safety Check...";
+                    modalBody.innerHTML = `
+                        <div class="flex flex-col items-center py-4">
+                            <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+                            <p class="font-bold text-slate-800">Staying within what your body tolerates today...</p>
+                        </div>`;
+                } else {
+                    modalTitle.innerText = "One moment...";
+                    modalBody.innerHTML = `
+                        <div class="flex flex-col items-center py-4">
+                            <div class="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mb-4"></div>
+                            <p class="font-bold text-slate-800">Finding a more comfortable move for you...</p>
+                        </div>`;
+                }
             }
 
             fetch(webAppUrl, {
@@ -167,12 +178,13 @@
 
                 if (answer === 'No') {
                     if (sessionNoCount >= 2) {
-                        modal.classList.add('hidden'); 
-                        showLockout();
+                        // Pause for 1 second so they see the Blue "Safety" message before the screen swap
+                        setTimeout(() => {
+                            modal.classList.add('hidden'); 
+                            showLockout();
+                        }, 1000);
                     } else {
-                        // SURGICAL CHANGE: Load data behind the modal first
                         loadClinicalData().then(() => {
-                            // Only hide the modal once the new move is loaded in the background
                             setTimeout(() => {
                                 modal.classList.add('hidden');
                                 modalFooter.classList.remove('hidden');
@@ -252,4 +264,5 @@
     </script>
 </body>
 </html>
+
 
