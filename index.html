@@ -39,7 +39,14 @@
                 <div id="exercise-container">
                     <div class="mb-6">
                         <div class="flex items-center justify-between mb-2">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Focus</label>
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Focus</label>
+                                <button onclick="showPainScienceInfo()" class="text-slate-300 hover:text-blue-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </button>
+                            </div>
                             <span id="levelBadge" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
                         </div>
                         <input id="boundary" type="text" readonly class="w-full p-0 mb-4 bg-transparent font-extrabold text-xl text-slate-800 focus:outline-none border-none">
@@ -223,7 +230,33 @@
                 modal.classList.add('hidden');
             };
         }
-    
+        
+        function showPainScienceInfo() {
+            const modal = document.getElementById('customModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalFooter = modal.querySelector('.flex.gap-3');
+        
+            modalTitle.innerText = "Why the small moves?";
+            modalBody.innerHTML = `
+                <div class="text-left space-y-3">
+                    <p>Pain is like a <strong>sensitive alarm system</strong>. Sometimes the alarm stays 'on' even after the danger has passed.</p>
+                    <p>These movements aren't about pushing through pain—they are about proving to your nervous system that it's safe to move. We are essentially 'resetting' the alarm so your body can let go of the tension.</p>
+                </div>`;
+            
+            // Hide the YES/NO buttons for this view
+            modalFooter.classList.add('hidden');
+            modal.classList.remove('hidden');
+        
+            // Close modal if they click anywhere on the screen
+            const closeInfo = () => {
+                modal.classList.add('hidden');
+                modal.removeEventListener('click', closeInfo);
+            };
+            // Small timeout ensures the initial click doesn't trigger the close
+            setTimeout(() => modal.addEventListener('click', closeInfo), 10);
+        }    
+        
         function showLockout() {
             const container = document.getElementById('exercise-container');
             document.getElementById('aiResponse').classList.add('hidden');
@@ -270,8 +303,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
