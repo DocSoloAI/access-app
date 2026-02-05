@@ -92,6 +92,7 @@
                 document.getElementById('aiResponse').classList.add('hidden');
                 const actionButtons = document.getElementById('actionButtons');
                 actionButtons.classList.remove('opacity-50', 'pointer-events-none');
+                
                 // Ensure buttons say the right thing
                 actionButtons.firstElementChild.innerText = "YES";
                 actionButtons.lastElementChild.innerText = "NO";
@@ -104,9 +105,12 @@
                 // Show Main UI
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
+
+                return true; // The "I'm finished!" signal
             } catch (e) {
                 document.getElementById('loadingOverlay').innerHTML = 
                     "<div class='p-4 bg-red-50 rounded-xl text-red-600'><p class='font-bold'>Connection Error</p><p class='text-xs'>Refresh to try again.</p></div>";
+                return false;
             }
         }
     
@@ -126,7 +130,7 @@
             const modal = document.getElementById('customModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
-            const modalFooter = modal.querySelector('.flex.gap-3'); // Selects the button container
+            const modalFooter = modal.querySelector('.flex.gap-3');
             
             actionButtons.classList.add('opacity-50', 'pointer-events-none');
 
@@ -138,7 +142,6 @@
                 responseText.innerText = "Great! This move is in your 'Safe Zone.' Go ahead with your reps.";
                 sessionNoCount = 0; 
             } else {
-                // LOCK THE MODAL OPEN and change text
                 modal.classList.remove('hidden');
                 modalTitle.innerText = "One moment...";
                 modalBody.innerHTML = `
@@ -146,7 +149,7 @@
                         <div class="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mb-4"></div>
                         <p class="font-bold text-slate-800">Finding a more comfortable move for you...</p>
                     </div>`;
-                modalFooter.classList.add('hidden'); // Hide the buttons so they can't click "Mistake"
+                modalFooter.classList.add('hidden'); 
             }
 
             fetch(webAppUrl, {
@@ -158,7 +161,6 @@
                     status: answer
                 })
             }).then(() => {
-                // Ensure buttons are reset for whenever they appear next
                 const actionButtons = document.getElementById('actionButtons');
                 actionButtons.firstElementChild.innerText = "YES";
                 actionButtons.lastElementChild.innerText = "NO";
@@ -168,15 +170,16 @@
                         modal.classList.add('hidden'); 
                         showLockout();
                     } else {
-                        // REFRESH ONLY: Give the patient a second to see the "Finding" message
-                        setTimeout(() => {
-                            modal.classList.add('hidden');
-                            // Note: showModal reset will handle modalFooter visibility next time
-                            loadClinicalData(); 
-                        }, 1500);
+                        // SURGICAL CHANGE: Load data behind the modal first
+                        loadClinicalData().then(() => {
+                            // Only hide the modal once the new move is loaded in the background
+                            setTimeout(() => {
+                                modal.classList.add('hidden');
+                                modalFooter.classList.remove('hidden');
+                            }, 1000); 
+                        });
                     }
                 } else {
-                    // YES path: Give them 1 second to read the green "Safe Zone" box before lockout
                     setTimeout(() => {
                         showLockoutSuccess("Check back in a few hours or tomorrow.");
                     }, 1500);
@@ -249,3 +252,4 @@
     </script>
 </body>
 </html>
+
